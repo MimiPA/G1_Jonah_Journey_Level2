@@ -95,22 +95,25 @@
   <!-- Navigation / Header -->
   <header class="w-full max-w-5xl mx-auto bg-slate-900/80 backdrop-blur border border-indigo-500/30 rounded-2xl p-3 sm:p-4 mb-3 flex flex-wrap justify-between items-center gap-3 shadow-lg">
     <div class="flex items-center gap-3">
-      <div class="text-3xl sm:text-4xl animate-bounce">🧔‍♂️</div>
+      <div class="text-3xl sm:text-4xl animate-bounce">⛵</div>
       <div>
         <h1 class="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-indigo-300">
-          Jonah's Journey to Nineveh
+          Jonah's Journey: Level 2
         </h1>
-        <p class="text-xs sm:text-sm text-indigo-200">Help Jonah find the path to Nineveh and debug mistakes!</p>
+        <p class="text-xs sm:text-sm text-indigo-200">Sail from Joppa Harbor to Nineveh and avoid 4 new story bugs!</p>
       </div>
     </div>
 
     <!-- Mode Selector & Controls -->
     <div class="flex items-center gap-2 flex-wrap">
       <button id="mode-free" onclick="switchMode('free')" class="px-3 py-1.5 text-xs sm:text-sm rounded-xl font-semibold bg-indigo-600 text-white shadow-md hover:bg-indigo-500 transition">
-        🎮 Free Play
+        🎮 Level 2 Map
       </button>
       <button id="mode-debug" onclick="switchMode('debug')" class="px-3 py-1.5 text-xs sm:text-sm rounded-xl font-semibold bg-slate-800 text-indigo-300 border border-indigo-500/40 hover:bg-indigo-900/50 transition">
         🛠️ Debug Challenge
+      </button>
+      <button onclick="randomizeHazards()" class="px-3 py-1.5 text-xs sm:text-sm rounded-xl font-semibold bg-purple-700 text-white border border-purple-400/40 hover:bg-purple-600 transition" title="Create a new 4-bug map">
+        🎲 New Map
       </button>
       <button id="sound-btn" onclick="toggleSound()" class="p-2 rounded-xl bg-slate-800 text-yellow-300 border border-slate-700 hover:bg-slate-700 transition" title="Toggle Sound">
         🔊
@@ -126,8 +129,8 @@
       
       <!-- Mission Info Banner -->
       <div id="mission-banner" class="w-full mb-4 bg-indigo-950/70 border border-indigo-500/30 rounded-2xl p-3 text-center">
-        <span class="text-xs text-amber-400 uppercase tracking-widest block font-bold">Mission Goal</span>
-        <span id="mission-text" class="text-sm sm:text-base font-semibold text-indigo-100">Guide Jonah from Hometown (0,0) to Nineveh 🏰! Avoid the 4 Jonah story bugs!</span>
+        <span class="text-xs text-amber-400 uppercase tracking-widest block font-bold">Level 2 Mission</span>
+        <span id="mission-text" class="text-sm sm:text-base font-semibold text-indigo-100">Start at Joppa (0,3) ⛵ and reach Nineveh (3,0) 🏰! Avoid all 4 bugs!</span>
       </div>
 
       <!-- 4x4 Grid Container -->
@@ -295,16 +298,16 @@
     const DIRECTIONS = ['NORTH', 'EAST', 'SOUTH', 'WEST'];
     const DIRECTION_EMOJIS = { NORTH: '⬆️', EAST: '➡️', SOUTH: '⬇️', WEST: '⬅️' };
     const DIRECTION_DEGREES = { NORTH: 0, EAST: 90, SOUTH: 180, WEST: 270 };
-
-    // Initial game layout positions (0-indexed row, col)
+    // Initial game layout positions (0-indexed row, col) - LEVEL 2 LAYOUT
     let state = {
-      jonah: { row: 0, col: 0, dirIndex: 1 }, // Starts facing East at Hometown
-      target: { row: 3, col: 3 },             // Nineveh
+      start: { row: 0, col: 3, dirIndex: 3 },   // Starts top-right facing West ⬅️
+      jonah: { row: 0, col: 3, dirIndex: 3 },
+      target: { row: 3, col: 0 },              // Nineveh at bottom-left
       hazards: [
-        { row: 0, col: 2, type: 'SLEEP', icon: '🛌', name: 'Sleeping in Ship', desc: 'Jonah fell asleep while fleeing on the ship!' },
-        { row: 1, col: 3, type: 'STORM', icon: '🌩️', name: 'Big Storm', desc: 'A fierce sea tempest hit the ship!' },
-        { row: 2, col: 1, type: 'FISH', icon: '🐋', name: 'Eaten by Big Fish', desc: 'Jonah was swallowed by the giant fish!' },
-        { row: 3, col: 0, type: 'LAND', icon: '🏜️', name: 'Desert Shore', desc: 'Jonah landed on dry land away from Nineveh!' }
+        { row: 0, col: 1, type: 'SLEEP', icon: '🛌', name: 'Sleeping in Ship', desc: 'Jonah fell fast asleep below deck!' },
+        { row: 1, col: 2, type: 'STORM', icon: '⛈️', name: 'Raging Sea Storm', desc: 'Giant waves crashed over the boat!' },
+        { row: 2, col: 1, type: 'FISH', icon: '🐋', name: 'Eaten by Big Fish', desc: 'A huge fish swallowed Jonah whole!' },
+        { row: 3, col: 2, type: 'LAND', icon: '🏜️', name: 'Hot Desert Land', desc: 'Jonah wandered into the hot desert!' }
       ],
       commands: [],
       isRunning: false,
@@ -393,7 +396,7 @@
           cell.id = `cell-${r}-${c}`;
           cell.className = `grid-cell rounded-xl flex items-center justify-center relative select-none`;
 
-          const isStart = (r === 0 && c === 0);
+          const isStart = (r === state.start.row && c === state.start.col);
           const isTarget = (r === state.target.row && c === state.target.col);
           const hazard = state.hazards.find(h => h.row === r && h.col === c);
           const isJonah = (r === state.jonah.row && c === state.jonah.col);
@@ -408,7 +411,7 @@
           } else if (hazard) {
             contentHTML += `<span class="text-2xl sm:text-3xl animate-pulse" title="${hazard.name}">${hazard.icon}</span>`;
           } else if (isStart && !isJonah) {
-            contentHTML += `<span class="text-xs text-emerald-400 font-bold opacity-60">HOME</span>`;
+            contentHTML += `<span class="text-xs text-emerald-400 font-bold opacity-75">JOPPA</span>`;
           }
 
           // Render Jonah sprite
@@ -447,12 +450,23 @@
     function addCommand(type) {
       if (state.isRunning) return;
       if (state.commands.length >= 12) {
-        alert("Path limit reached! Try running your code or clearing steps.");
+        showToast("Path limit reached (12 steps)! Run your code or clear steps.");
         return;
       }
       playSound('click');
       state.commands.push(type);
       renderCommandQueue();
+    }
+
+    function showToast(message) {
+      const missionText = document.getElementById('mission-text');
+      const oldText = missionText.innerText;
+      missionText.innerText = "⚠️ " + message;
+      missionText.classList.add('text-amber-300');
+      setTimeout(() => {
+        missionText.innerText = oldText;
+        missionText.classList.remove('text-amber-300');
+      }, 2500);
     }
 
     function deleteLastCommand() {
@@ -504,7 +518,7 @@
     async function runProgram() {
       if (state.isRunning) return;
       if (state.commands.length === 0) {
-        alert("Please add at least one command before running!");
+        showToast("Tap the arrow buttons first to give Jonah instructions!");
         return;
       }
 
@@ -609,7 +623,7 @@
     }
 
     function resetJonah(render = true) {
-      state.jonah = { row: 0, col: 0, dirIndex: 1 }; // Row 0, Col 0, Facing East
+      state.jonah = { ...state.start };
       if (render) renderGrid();
     }
 
@@ -666,22 +680,67 @@
       if (mode === 'free') {
         freeBtn.className = "px-3 py-1.5 text-xs sm:text-sm rounded-xl font-semibold bg-indigo-600 text-white shadow-md hover:bg-indigo-500 transition";
         debugBtn.className = "px-3 py-1.5 text-xs sm:text-sm rounded-xl font-semibold bg-slate-800 text-indigo-300 border border-indigo-500/40 hover:bg-indigo-900/50 transition";
-        missionText.innerText = "Guide Jonah from Hometown (0,0) to Nineveh 🏰! Avoid the 4 story bugs!";
+        missionText.innerText = "Start at Joppa (0,3) ⛵ and reach Nineveh (3,0) 🏰! Avoid all 4 bugs!";
         clearCommands();
         resetJonah();
       } else {
         debugBtn.className = "px-3 py-1.5 text-xs sm:text-sm rounded-xl font-semibold bg-indigo-600 text-white shadow-md hover:bg-indigo-500 transition";
         freeBtn.className = "px-3 py-1.5 text-xs sm:text-sm rounded-xl font-semibold bg-slate-800 text-indigo-300 border border-indigo-500/40 hover:bg-indigo-900/50 transition";
-        missionText.innerText = "🛠️ Debug Challenge: This pre-built path hits the Sleeping Ship bug! Fix the steps!";
+        missionText.innerText = "🛠️ Debug Challenge: This route steers into the Raging Sea Storm! Fix the steps!";
         loadDebugChallenge();
       }
     }
 
     function loadDebugChallenge() {
+      // Restore standard Level 2 positions for the challenge
+      state.start = { row: 0, col: 3, dirIndex: 3 };
+      state.target = { row: 3, col: 0 };
+      state.hazards = [
+        { row: 0, col: 1, type: 'SLEEP', icon: '🛌', name: 'Sleeping in Ship', desc: 'Jonah fell fast asleep below deck!' },
+        { row: 1, col: 2, type: 'STORM', icon: '⛈️', name: 'Raging Sea Storm', desc: 'Giant waves crashed over the boat!' },
+        { row: 2, col: 1, type: 'FISH', icon: '🐋', name: 'Eaten by Big Fish', desc: 'A huge fish swallowed Jonah whole!' },
+        { row: 3, col: 2, type: 'LAND', icon: '🏜️', name: 'Hot Desert Land', desc: 'Jonah wandered into the hot desert!' }
+      ];
       resetJonah();
-      // Buggy sequence: Moves right twice directly into Sleeping Ship (0,2)
-      state.commands = ['RIGHT', 'RIGHT', 'DOWN', 'DOWN', 'DOWN', 'RIGHT'];
+      // Buggy sequence: Left to (0,2), Down to (1,2) -> hits Raging Sea Storm!
+      state.commands = ['LEFT', 'DOWN', 'LEFT', 'DOWN', 'LEFT', 'DOWN'];
       renderCommandQueue();
+    }
+
+    /* Randomize 4 Story Bugs on valid solvable spots */
+    function randomizeHazards() {
+      if (state.isRunning) return;
+      playSound('click');
+
+      const bugTemplates = [
+        { type: 'SLEEP', icon: '🛌', name: 'Sleeping in Ship', desc: 'Jonah fell fast asleep below deck!' },
+        { type: 'STORM', icon: '⛈️', name: 'Raging Sea Storm', desc: 'Giant waves crashed over the boat!' },
+        { type: 'FISH', icon: '🐋', name: 'Eaten by Big Fish', desc: 'A huge fish swallowed Jonah whole!' },
+        { type: 'LAND', icon: '🏜️', name: 'Hot Desert Land', desc: 'Jonah wandered into the hot desert!' }
+      ];
+
+      // Keep a guaranteed safe corridor along the left & bottom edges (Col 0 and Row 3)
+      const safeCandidateCells = [
+        { row: 0, col: 1 }, { row: 0, col: 2 },
+        { row: 1, col: 1 }, { row: 1, col: 2 }, { row: 1, col: 3 },
+        { row: 2, col: 1 }, { row: 2, col: 2 }, { row: 2, col: 3 }
+      ];
+
+      // Shuffle candidate cells
+      for (let i = safeCandidateCells.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [safeCandidateCells[i], safeCandidateCells[j]] = [safeCandidateCells[j], safeCandidateCells[i]];
+      }
+
+      state.hazards = bugTemplates.map((bug, index) => ({
+        ...bug,
+        row: safeCandidateCells[index].row,
+        col: safeCandidateCells[index].col
+      }));
+
+      clearCommands();
+      resetJonah();
+      showToast("New 4-bug map created! Guide Jonah safely to Nineveh!");
     }
 
     /* ==========================================================================
